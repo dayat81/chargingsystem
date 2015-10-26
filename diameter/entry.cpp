@@ -306,6 +306,7 @@ diameter entry::process(diameter d){
     }
     //printf("reqbit : %i\n",reqbit);
     int ccode=((*(d.ccode) & 0xff) << 16)| ((*(d.ccode+1) & 0xff) << 8) | ((*(d.ccode+2)& 0xff));
+    printf("ccode: %i\n",ccode);
    int i=0;
     logic lojik=logic();
     lojik.db=db;
