@@ -205,7 +205,7 @@ void entry::getCEA(diameter d,avp* &allavp,int &l,int &total,std::string &host){
     avp o=util.encodeString(264,0,f,ORIGIN_HOST);
     avp realm=util.encodeString(296,0,f,ORIGIN_REALM);
     avp vid=util.encodeInt32(266, 0, f, 0);
-    avp pn=util.encodeString(269, 0, f, "simple PCRF");
+    avp pn=util.encodeString(269, 0, f, "simple OCS");
     std::vector<std::string> ips=split(HOST_IP, '.');
     std::string::size_type sz;   // alias of size_t
     unsigned int aa = std::stoi (ips[0],&sz);
@@ -216,7 +216,7 @@ void entry::getCEA(diameter d,avp* &allavp,int &l,int &total,std::string &host){
     //unsigned int ipval[4]={10,195,84,157};
     unsigned int ipval[4]={aa,bb,cc,dd};
     avp ip=util.encodeIP(257, 0, f, ipval);
-    avp authappid=util.encodeInt32(258, 0, f, 16777238);
+    //avp authappid=util.encodeInt32(258, 0, f, 16777238);
     avp svid=util.encodeInt32(265, 0, f, 10415);
     avp svid1=util.encodeInt32(265, 0, f, 193);
     avp rc=util.encodeInt32(268, 0, f, 2001);
@@ -225,19 +225,19 @@ void entry::getCEA(diameter d,avp* &allavp,int &l,int &total,std::string &host){
     //vid.dump();
     //sid.dump();
     //printf("\n");
-    total=o.len+realm.len+vid.len+pn.len+ip.len+authappid.len+svid.len+svid1.len+rc.len+osid.len;
-    l=10;
+    total=o.len+realm.len+vid.len+pn.len+ip.len+svid.len+svid1.len+rc.len+osid.len;
+    l=9;
     allavp=new avp[l];
     allavp[0]=o;
     allavp[1]=realm;
     allavp[2]=vid;
     allavp[3]=pn;
     allavp[4]=ip;
-    allavp[5]=authappid;
-    allavp[6]=svid;
-    allavp[7]=svid1;
-    allavp[8]=rc;
-    allavp[9]=osid;
+    //allavp[5]=authappid;
+    allavp[5]=svid;
+    allavp[6]=svid1;
+    allavp[7]=rc;
+    allavp[8]=osid;
 }
 diameter entry::createRAR(char* msid){
     printf("create RAR\n");

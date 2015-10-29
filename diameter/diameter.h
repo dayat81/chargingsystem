@@ -12,12 +12,12 @@
 #include "avp.h"
 //#include <functional>
 #include <string>
-#define ORIGIN_HOST    "redir.sapctest.lte.xl.co.id"
-#define ORIGIN_REALM   "xltest.id"
+#define ORIGIN_HOST    "gy812.cbtevspap12.xl.co.id"
+#define ORIGIN_REALM   "gy812.tc.xl.co.id"
 #define HOST_IP "0.0.0.0"
-#define DB_PATH "/Users/dayat81/dbfile/testdb"
-#define PORT    "3868" /* Port to listen on */
-#define CMDPORT    "1234" /* Port to listen on */
+#define DB_PATH "/Users/dayat81/dbfile/csdb"
+#define PORT    "13136" /* Port to listen on */
+#define CMDPORT    "2345" /* Port to listen on */
 class diameter{
 
 public:
