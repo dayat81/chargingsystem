@@ -285,7 +285,89 @@ avp avputil::encodeIP(int acode, int vcode, char flags, unsigned int value[]){
     //
     //    return a;
 }
-
+avp avputil::encodeInt64(int acode, int vcode, char flags, int64_t value){
+    
+    int l=16;
+    if(vcode!=0){
+        l=l+4;
+    }
+    //char res[l];
+    char* resp=new char[l];//res;
+    
+    
+    
+    char *ptr = (char*)&acode;
+    ptr=ptr+3;
+    unsigned int i=0;
+    while(i<4){
+        *resp=*ptr;
+        resp++;
+        ptr--;
+        i++;
+    }
+    *resp=flags;
+    //resp=resp-4;
+    resp++;
+    //	 char *msg = new char[4];
+    //	 for(int i=0;i<4;++i, ++ptr)
+    //	    msg[3-i] = *ptr;
+    //resp=resp-4;
+    
+    char *ptr1 = (char*)&l;
+    ptr1=ptr1+2;
+    i=0;
+    while(i<3){
+        *resp=*ptr1;
+        resp++;
+        ptr1--;
+        i++;
+    }
+    
+    //insert vendor code
+    if(vcode!=0){
+        char *ptr2 = (char*)&vcode;
+        ptr2=ptr2+3;
+        i=0;
+        while(i<4){
+            *resp=*ptr2;
+            resp++;
+            ptr2--;
+            i++;
+        }
+    }
+    //	 resp=resp-8;	//for display
+    
+    char bytes[8];
+    //
+    bytes[0] = (value >> 52) & 0xFF;
+    bytes[1] = (value >> 48) & 0xFF;
+    bytes[2] = (value >> 40) & 0xFF;
+    bytes[3] = (value >> 32) & 0xFF;
+    bytes[4] = (value >> 24) & 0xFF;
+    bytes[5] = (value >> 16) & 0xFF;
+    bytes[6] = (value >> 8) & 0xFF;
+    bytes[7] = value & 0xFF;
+    char* b=bytes;
+    i=0;
+    while(i<4){
+        *resp=*b;
+        resp++;
+        b++;
+        i++;
+    }
+    resp=resp-l;
+    //	 char *msg1 = new char[4];
+    //	 for(int i=0;i<3;++i, ++ptr1)
+    //	    msg1[2-i] = *ptr1;
+    
+    avp a=avp(resp,l);
+    return a;
+    
+    
+    //    avp a=avp(b,4);
+    //
+    //    return a;
+}
 avp avputil::encodeInt32(int acode, int vcode, char flags, int value){
     
     int l=12;

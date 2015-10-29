@@ -73,7 +73,30 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         req_type=util.decodeAsInt(reqtype);
     }
     avp cca_req_num=d.copyAVP(415, 0);
-    avp cr_install=avp(0,0);
+    
+    char f=0x40;
+    avp o=util.encodeString(264,0,f,ORIGIN_HOST);
+    avp realm=util.encodeString(296,0,f,ORIGIN_REALM);
+    //avp authappid=util.encodeInt32(258, 0, f, 16777238);
+    avp rc=util.encodeInt32(268, 0, f, 2001);
+    avp flid=util.encodeInt32(629, 10415, 0xc0, 1);
+    avp fl=util.encodeInt32(630, 10415, 0xc0, 3);
+    avp vid=util.encodeInt32(266, 0, f, 10415);
+    avp* list_fl[3]={&vid,&flid,&fl};
+    avp sf=util.encodeAVP(628, 10415, 0xc0, list_fl, 3);
+    
+    total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+rc.len+sf.len;
+    l=7;
+    allavp=new avp[l];
+    allavp[0]=cca_sessid;
+    allavp[1]=o;
+    allavp[2]=realm;
+    allavp[3]=cca_req_type;
+    allavp[4]=cca_req_num;
+    //allavp[5]=authappid;
+    allavp[5]=rc;
+    allavp[6]=sf;
+    //avp msccresp=avp(0,0);
     //if(req_type==1){//initial
         //read avp msid
         bool exit=false;
@@ -98,21 +121,20 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
             }
         }
         std::cout<<msidstring<<std::endl;
-        std::string msidsesinfo=msidstring;
         std::string msidusageinfo=msidstring;
+        msidusageinfo.append("_usage");
         //store sessid,msid
         
     rocksdb::Status status;
-    if (req_type==1) {
-        status = db->Put(rocksdb::WriteOptions(), sessidval, msidstring);
-        //status = db->Put(rocksdb::WriteOptions(), msidsesinfo.append("_sess"), sessidval);
-    }
+//    if (req_type==1) {
+//        status = db->Put(rocksdb::WriteOptions(), sessidval, msidstring);
+//        //status = db->Put(rocksdb::WriteOptions(), msidsesinfo.append("_sess"), sessidval);
+//    }
     
         //status = db->Put(rocksdb::WriteOptions(), msidrarinfo.append("_rarinfo"), "{\"addacg\":[],\"delacg\":[]}");
         std::string val;
         status = db->Get(rocksdb::ReadOptions(), msidstring, &val);
         bool profilefound=false;
-        std::cout<<val<<std::endl;
         if(val==""){
             //look for default profile
             status = db->Get(rocksdb::ReadOptions(), "default", &val);
@@ -122,6 +144,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         }else{
             profilefound=true;
         }
+    //std::cout<<"quota"<<val<<std::endl;
         if(profilefound){
             Document domrg;
             domrg.Parse(val.c_str());
@@ -131,7 +154,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
             if(a.Size()>0){
                 //cek mscc avp in ccr with iteration
                 bool all=false;
-                int rgnum = 0,totalnum;
+                int rgnum = 0,totalnum=0,quota = 0;
                 //int64_t totalnum;
                 while (!all) {
                     avp mscc=d.getAVP(456, 0);
@@ -145,12 +168,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                         }
                         std::string s = std::to_string(rgnum);
                         char const *pchar = s.c_str();
-                        if(rsu.len>-1){
-                            printf("rsu\n");
-                            //cek quota for granting
-                        }
                         //cek usage report
-                        
                         if(usu.len>0){
                             avp total=util.getAVP(421, 0, usu);
                             if(total.len>0){
@@ -158,8 +176,8 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                 printf("usage %i\n", totalnum);
                                 //get prev usage in database
                                 std::string valusage;
-                                status = db->Get(rocksdb::ReadOptions(), msidusageinfo.append("_usage"), &valusage);
-                                std::cout<<"valusage -"<<valusage<<"-"<<std::endl;
+                                status = db->Get(rocksdb::ReadOptions(), msidusageinfo, &valusage);
+                                //std::cout<<"valusage -"<<valusage<<"-"<<std::endl;
                                 if (valusage!="") {
                                     //get & delete old &create new
                                     
@@ -180,8 +198,8 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                              itr != c.MemberEnd(); ++itr)
                                         {
                                             const char* rgkey=itr->name.GetString();
-                                            printf("Type of member %s is %i\n",
-                                                   itr->name.GetString(), itr->value.GetInt());
+                                            //printf("Type of member %s is %i\n",
+                                               //    itr->name.GetString(), itr->value.GetInt());
                                             if(strcmp(rgkey, pchar) == 0){
                                                 totalnum=totalnum+(itr->value.GetInt());
                                                 a.Erase(&c);
@@ -208,13 +226,81 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                     //create new
                                     printf("create new usage\n");
                                     std::string valdef="{\"rg\":[{\"";
-                                    valdef=valdef.append(pchar);
-                                    valdef=valdef.append("\":");
+                                    valdef.append(pchar);
+                                    valdef.append("\":");
                                     std::string st = std::to_string(totalnum);
                                     char const *pchart = st.c_str();
-                                    valdef=valdef.append(pchart);
-                                    valdef=valdef.append("}]}");
+                                    valdef.append(pchart);
+                                    valdef.append("}]}");
                                     status = db->Put(rocksdb::WriteOptions(),msidusageinfo, valdef);
+                                }
+                            }
+                        }else{//no usage report
+                            if(rsu.len>-1){
+                                printf("rsu\n");
+                                //cek quota-usage for granting
+                                //get prev usage in database
+                                std::string valusage;
+                                status = db->Get(rocksdb::ReadOptions(), msidusageinfo, &valusage);
+                                //std::cout<<"valusage -"<<valusage<<"-"<<std::endl;
+                                if (valusage!="") {
+                                    Document domrgusage;
+                                    domrgusage.Parse(valusage.c_str());
+                                    const Value& ausage = domrgusage["rg"];
+                                    assert(ausage.IsArray());
+                                    for (rapidjson::SizeType i = 0; i < ausage.Size(); i++)
+                                    {
+                                        const Value& c = ausage[i];
+                                        for (Value::ConstMemberIterator itr = c.MemberBegin();
+                                             itr != c.MemberEnd(); ++itr)
+                                        {
+                                            const char* rgkey=itr->name.GetString();
+                                            //printf("Type of member %s is %i\n",
+                                              //     itr->name.GetString(), itr->value.GetInt());
+                                            if(strcmp(rgkey, pchar) == 0){
+                                                totalnum=itr->value.GetInt();
+                                            }
+                                        }
+                                        
+                                    }
+                                    for (rapidjson::SizeType i = 0; i < a.Size(); i++)
+                                    {
+                                        const Value& c = a[i];
+                                        for (Value::ConstMemberIterator itr = c.MemberBegin();
+                                             itr != c.MemberEnd(); ++itr)
+                                        {
+                                            const char* rgkey=itr->name.GetString();
+                                            //printf("Type of member %s is %i\n",
+                                             //      itr->name.GetString(), itr->value.GetInt());
+                                            if(strcmp(rgkey, pchar) == 0){
+                                                quota=itr->value.GetInt();
+                                            }
+                                        }
+                                        
+                                    }
+                                    printf("quota: %i, usage: %i\n",quota,totalnum);
+                                    int grant=quota-totalnum;
+                                    //printf("grant: %i\n",grant);
+                                    if(grant>0){
+                                        //create octet avp
+                                        //avp grantvol = util.encodeInt64(421, 0, f, grant);
+                                        //grantvol.dump();
+                                        //avp* listavp[1]={&grantvol};
+                                        //avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
+                                        avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                                        avp rcmscc=util.encodeInt32(268, 0, f, 2001);
+                                        avp* listavp1[2]={&rgrespon,&rcmscc};
+                                        avp msccresp=util.encodeAVP(456, 0, f, listavp1, 2);
+                                        //msccresp.dump();
+                                        printf("\n");
+                                        allavp[l]=msccresp;
+                                        l++;
+                                        total=total+msccresp.len;
+                                        
+                                        //add mscc
+                                    }
+                                }else{
+                                    
                                 }
                             }
                         }
@@ -237,43 +323,15 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         }
    
     //}
-    if (req_type==3){ //terminate
-        //get msid by sessid
-//        std::string val;
-//        rocksdb::Status status = db->Get(rocksdb::ReadOptions(), sessidval, &val);
-//        status = db->Delete(rocksdb::WriteOptions(),val.append("_sess"));
-        //delete sessid
-        status = db->Delete(rocksdb::WriteOptions(),sessidval);
-    }
-    char f=0x40;
-    avp o=util.encodeString(264,0,f,ORIGIN_HOST);
-    avp realm=util.encodeString(296,0,f,ORIGIN_REALM);
-    //avp authappid=util.encodeInt32(258, 0, f, 16777238);
-    avp rc=util.encodeInt32(268, 0, f, 2001);
-    avp flid=util.encodeInt32(629, 10415, 0xc0, 1);
-    avp fl=util.encodeInt32(630, 10415, 0xc0, 3);
-    avp vid=util.encodeInt32(266, 0, f, 10415);
-    avp* list_fl[3]={&vid,&flid,&fl};
-    avp sf=util.encodeAVP(628, 10415, 0xc0, list_fl, 3);
-    
-    total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+rc.len+sf.len;
-    l=7;
-    if(cr_install.len>0){
-        total=total+cr_install.len;
-        l++;
-    }
-    allavp=new avp[l];
-    allavp[0]=cca_sessid;
-    allavp[1]=o;
-    allavp[2]=realm;
-    allavp[3]=cca_req_type;
-    allavp[4]=cca_req_num;
-    //allavp[5]=authappid;
-    allavp[5]=rc;
-    allavp[6]=sf;
-    if(cr_install.len>0){
-        allavp[l-1]=cr_install;
-    }
+//    if (req_type==3){ //terminate
+//        //get msid by sessid
+////        std::string val;
+////        rocksdb::Status status = db->Get(rocksdb::ReadOptions(), sessidval, &val);
+////        status = db->Delete(rocksdb::WriteOptions(),val.append("_sess"));
+//        //delete sessid
+//        status = db->Delete(rocksdb::WriteOptions(),sessidval);
+//    }
+ 
 }
 
 

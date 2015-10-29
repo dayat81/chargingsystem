@@ -24,6 +24,7 @@ public:
     
     avp encodeString(int acode,int vcode,char flags,std::string value);
     avp encodeInt32(int acode,int vcode,char flags,int value);
+    avp encodeInt64(int acode,int vcode,char flags,int64_t value);
     avp encodeIP(int acode,int vcode,char flags,unsigned int value[]);
     //avp encodeIP(int acode,int vcode,char flags,char* val);
     avp encodeAVP(int acode,int vcode,char flags,avp* list[],int l);
