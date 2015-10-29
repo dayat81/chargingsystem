@@ -139,12 +139,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         }
     //std::cout<<"quota"<<val<<std::endl;
         if(profilefound){
-            Document domrg;
-            domrg.Parse(val.c_str());
-            const Value& a = domrg["rg"];
-            assert(a.IsArray());
-            
-            if(a.Size()>0){
+            //if(a.Size()>0){
                 //cek mscc avp in ccr with iteration
                 bool all=false;
                 int rgnum = 0,totalnum=0,quota = 0;
@@ -161,12 +156,56 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                         }
                         std::string s = std::to_string(rgnum);
                         char const *pchar = s.c_str();
+                        Document domrg;
+                        domrg.Parse(val.c_str());
+                        const Value& a = domrg["rg"];
+                        assert(a.IsArray());
+                        for (rapidjson::SizeType i = 0; i < a.Size(); i++)
+                        {
+                            const Value& c = a[i];
+                            for (Value::ConstMemberIterator itr = c.MemberBegin();
+                                 itr != c.MemberEnd(); ++itr)
+                            {
+                                const char* rgkey=itr->name.GetString();
+                                //printf("Type of member %s is %i\n",
+                                //      itr->name.GetString(), itr->value.GetInt());
+                                if(strcmp(rgkey, pchar) == 0){
+                                    quota=itr->value.GetInt();
+                                }
+                            }
+                            
+                        }
+                        //get prev usage in database
+                        std::string valusage;
+                        status = db->Get(rocksdb::ReadOptions(), msidusageinfo, &valusage);
+                        //std::cout<<"valusage -"<<valusage<<"-"<<std::endl;
+                        if (valusage!="") {
+                            Document domrgusage;
+                            domrgusage.Parse(valusage.c_str());
+                            const Value& ausage = domrgusage["rg"];
+                            assert(ausage.IsArray());
+                            for (rapidjson::SizeType i = 0; i < ausage.Size(); i++)
+                            {
+                                const Value& c = ausage[i];
+                                for (Value::ConstMemberIterator itr = c.MemberBegin();
+                                     itr != c.MemberEnd(); ++itr)
+                                {
+                                    const char* rgkey=itr->name.GetString();
+                                    //printf("Type of member %s is %i\n",
+                                    //     itr->name.GetString(), itr->value.GetInt());
+                                    if(strcmp(rgkey, pchar) == 0){
+                                        totalnum=itr->value.GetInt();
+                                    }
+                                }
+                                
+                            }
+                        }
                         //cek usage report
                         if(usu.len>0){
                             avp total=util.getAVP(421, 0, usu);
                             if(total.len>0){
-                                totalnum=util.decodeAsInt(total);
                                 printf("usage %i\n", totalnum);
+                                totalnum=totalnum+util.decodeAsInt(total);
                                 //get prev usage in database
                                 std::string valusage;
                                 status = db->Get(rocksdb::ReadOptions(), msidusageinfo, &valusage);
@@ -194,7 +233,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                             //printf("Type of member %s is %i\n",
                                                //    itr->name.GetString(), itr->value.GetInt());
                                             if(strcmp(rgkey, pchar) == 0){
-                                                totalnum=totalnum+(itr->value.GetInt());
+                                                //totalnum=totalnum+(itr->value.GetInt());
                                                 a.Erase(&c);
                                             }
                                         }
@@ -228,106 +267,37 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                     status = db->Put(rocksdb::WriteOptions(),msidusageinfo, valdef);
                                 }
                             }
-                        }else{//no usage report
-                            if(rsu.len>-1){
-                                printf("rsu\n");
-                                //cek quota-usage for granting
-                                //get prev usage in database
-                                std::string valusage;
-                                status = db->Get(rocksdb::ReadOptions(), msidusageinfo, &valusage);
-                                //std::cout<<"valusage -"<<valusage<<"-"<<std::endl;
-                                if (valusage!="") {
-                                    Document domrgusage;
-                                    domrgusage.Parse(valusage.c_str());
-                                    const Value& ausage = domrgusage["rg"];
-                                    assert(ausage.IsArray());
-                                    for (rapidjson::SizeType i = 0; i < ausage.Size(); i++)
-                                    {
-                                        const Value& c = ausage[i];
-                                        for (Value::ConstMemberIterator itr = c.MemberBegin();
-                                             itr != c.MemberEnd(); ++itr)
-                                        {
-                                            const char* rgkey=itr->name.GetString();
-                                            //printf("Type of member %s is %i\n",
-                                              //     itr->name.GetString(), itr->value.GetInt());
-                                            if(strcmp(rgkey, pchar) == 0){
-                                                totalnum=itr->value.GetInt();
-                                            }
-                                        }
-                                        
-                                    }
-                                    for (rapidjson::SizeType i = 0; i < a.Size(); i++)
-                                    {
-                                        const Value& c = a[i];
-                                        for (Value::ConstMemberIterator itr = c.MemberBegin();
-                                             itr != c.MemberEnd(); ++itr)
-                                        {
-                                            const char* rgkey=itr->name.GetString();
-                                            //printf("Type of member %s is %i\n",
-                                             //      itr->name.GetString(), itr->value.GetInt());
-                                            if(strcmp(rgkey, pchar) == 0){
-                                                quota=itr->value.GetInt();
-                                            }
-                                        }
-                                        
-                                    }
-                                    printf("quota: %i, usage: %i\n",quota,totalnum);
-                                    int grant=quota-totalnum;
-                                    printf("grant: %i\n",grant);
-                                    if(grant>0){
-                                        //create octet avp
-                                        avp grantvol = util.encodeInt64(421, 0, f, grant);
-                                        grantvol.dump();
-                                        printf("\n");
-                                        avp* listavp[1]={&grantvol};
-                                        avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
-                                        gsu.dump();
-                                        avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
-                                        avp rcmscc=util.encodeInt32(268, 0, f, 2001);
-                                        avp* listavp1[3]={&gsu,&rgrespon,&rcmscc};
-                                        avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
-                                        //msccresp.dump();
-                                        printf("\n");
-                                        allavp[l]=msccresp;
-                                        l++;
-                                        total=total+msccresp.len;
-                                        
-                                        //add mscc
-                                    }
-                                }else{
-                                    avp grantvol = util.encodeInt64(421, 0, f, 1234);
-                                    grantvol.dump();
-                                    printf("\n");
-                                    avp* listavp[1]={&grantvol};
-                                    avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
-                                    gsu.dump();
-                                    avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
-                                    avp rcmscc=util.encodeInt32(268, 0, f, 2001);
-                                    avp* listavp1[3]={&gsu,&rgrespon,&rcmscc};
-                                    avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
-                                    l++;
-                                    total=total+msccresp.len;
-                                    ListMSCC.push_front(msccresp);
-                                }
+                        }
+                        if(rsu.len>-1){
+                            printf("rsu\n");
+                            //cek quota-usage for granting
+                            printf("quota: %i, usage: %i\n",quota,totalnum);
+                            int grant=quota-totalnum;
+                            printf("grant: %i\n",grant);
+                            if(grant>0){
+                                //create octet avp
+                                avp grantvol = util.encodeInt64(421, 0, f, grant);
+                                //grantvol.dump();
+                                //printf("\n");
+                                avp* listavp[1]={&grantvol};
+                                avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
+                                //gsu.dump();
+                                avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                                avp rcmscc=util.encodeInt32(268, 0, f, 2001);
+                                avp* listavp1[3]={&gsu,&rgrespon,&rcmscc};
+                                avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
+                                //msccresp.dump();
+                                printf("\n");
+                                l++;
+                                total=total+msccresp.len;
+                                ListMSCC.push_front(msccresp);
+                                //add mscc
                             }
                         }
+                        
                     }else{
                         all=true;
                     }
-                }
-                allavp=new avp[l];
-                allavp[0]=cca_sessid;
-                allavp[1]=o;
-                allavp[2]=realm;
-                allavp[3]=cca_req_type;
-                allavp[4]=cca_req_num;
-                //allavp[5]=authappid;
-                allavp[5]=rc;
-                allavp[6]=sf;
-                int i=7;
-                for (std::list<avp>::iterator it = ListMSCC.begin(); it != ListMSCC.end(); it++){
-                    allavp[i]=*it;
-                    i++;
                 }
 //                avp* acg=new avp[a.Size()];
 //                for (SizeType i = 0; i < a.Size(); i++){ // Uses SizeType instead of size_t
@@ -340,9 +310,22 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
 //                }
 //                acg=acg-a.Size();
 //                cr_install=util.encodeAVP(1001, 10415, 0xC0, acg, a.Size());
-            }
+            //}
         }
-   
+    allavp=new avp[l];
+    allavp[0]=cca_sessid;
+    allavp[1]=o;
+    allavp[2]=realm;
+    allavp[3]=cca_req_type;
+    allavp[4]=cca_req_num;
+    //allavp[5]=authappid;
+    allavp[5]=rc;
+    allavp[6]=sf;
+    int i=7;
+    for (std::list<avp>::iterator it = ListMSCC.begin(); it != ListMSCC.end(); it++){
+        allavp[i]=*it;
+        i++;
+    }
     //}
 //    if (req_type==3){ //terminate
 //        //get msid by sessid
