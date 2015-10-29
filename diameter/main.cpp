@@ -250,11 +250,21 @@ void *handlecommand(void *sock){
             int res=write(newsock, result, strlen(result));
         }else if( memcmp( params[0], "show", strlen( "show") ) == 0 &&memcmp( params[1], "msid", strlen( "msid") ) == 0 ) {
             //char result[1024];
+            char* info="_usage";
+            char rarinfo[strlen(params[2])+strlen(info)];
+            strcpy(rarinfo,params[2]); // copy string one into the result.
+            strcat(rarinfo,info); // append string two to the result.
+            
             bzero(result, 1024);
             std::string val;
             rocksdb::Status status = db->Get(rocksdb::ReadOptions(),params[2], &val);
             std::cout<<val<<std::endl;
+            std::string valuse;
+            status = db->Get(rocksdb::ReadOptions(),rarinfo, &valuse);
+            std::cout<<valuse<<std::endl;
             char* value = to_char(val);
+            strcat(result, value);
+            value = to_char(valuse);
             strcat(result, value);
             strcat(result, "\nocs>");
             int res=write(newsock, result, strlen(result));
