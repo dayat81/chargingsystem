@@ -13,6 +13,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include <list>
 
 using namespace rapidjson;
 logic::logic(){
@@ -87,15 +88,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
     
     total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+rc.len+sf.len;
     l=7;
-    allavp=new avp[l];
-    allavp[0]=cca_sessid;
-    allavp[1]=o;
-    allavp[2]=realm;
-    allavp[3]=cca_req_type;
-    allavp[4]=cca_req_num;
-    //allavp[5]=authappid;
-    allavp[5]=rc;
-    allavp[6]=sf;
+    std::list<avp> ListMSCC;
     //avp msccresp=avp(0,0);
     //if(req_type==1){//initial
         //read avp msid
@@ -302,13 +295,39 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                         //add mscc
                                     }
                                 }else{
-                                    
+                                    avp grantvol = util.encodeInt64(421, 0, f, 1234);
+                                    grantvol.dump();
+                                    printf("\n");
+                                    avp* listavp[1]={&grantvol};
+                                    avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
+                                    gsu.dump();
+                                    avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                                    avp rcmscc=util.encodeInt32(268, 0, f, 2001);
+                                    avp* listavp1[3]={&gsu,&rgrespon,&rcmscc};
+                                    avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
+                                    l++;
+                                    total=total+msccresp.len;
+                                    ListMSCC.push_front(msccresp);
                                 }
                             }
                         }
                     }else{
                         all=true;
                     }
+                }
+                allavp=new avp[l];
+                allavp[0]=cca_sessid;
+                allavp[1]=o;
+                allavp[2]=realm;
+                allavp[3]=cca_req_type;
+                allavp[4]=cca_req_num;
+                //allavp[5]=authappid;
+                allavp[5]=rc;
+                allavp[6]=sf;
+                int i=7;
+                for (std::list<avp>::iterator it = ListMSCC.begin(); it != ListMSCC.end(); it++){
+                    allavp[i]=*it;
+                    i++;
                 }
 //                avp* acg=new avp[a.Size()];
 //                for (SizeType i = 0; i < a.Size(); i++){ // Uses SizeType instead of size_t
