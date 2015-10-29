@@ -28,16 +28,35 @@ std::string avputil::decodeAsString(avp a){
 
 int avputil::decodeAsInt(avp a){
     int i=a.len-1;
-    int res=(*a.val&0xff<<(8*i));
+    //printf("%02X ",*a.val&0xff);
+    int res=((*a.val&0xff)<<(8*i));
     a.val++;
     i--;
     while (i>=0) {
-        res=res|(*a.val&0xff<<(8*i));
+        res=res|((*a.val&0xff)<<(8*i));
+        //printf("%i %02X ",i,*a.val&0xff);
         i--;
         a.val++;
     }
     return res;
 }
+
+//int64_t avputil::decodeAsInt64(avp a){
+//    int i=a.len-1;
+//    printf("%02X ",*a.val&0xff);
+//    int64_t res=(*a.val&0xff<<(8*i));
+//    a.val++;
+//    i--;
+//    while (i>=0) {
+//        res=res|((*a.val&0xff)<<(8*i));
+//        printf("%i %02X ",i,*a.val&0xff);
+//        i--;
+//        a.val++;
+//    }
+//    int temp=(0x03<< 8) | (0xe8);
+//    printf("temp %i\n",temp);
+//    return res;
+//}
 
 avp avputil::getAVP(int acode, int vcode, avp a){
     int cc=0;
@@ -49,7 +68,7 @@ avp avputil::getAVP(int acode, int vcode, avp a){
 //        j++;
 //    }
 //    p=p-4;
-    avp r=avp(0,0);
+    avp r=avp(0,-1);
     bool found=false;
     int avpcode;
     int vendorbit;

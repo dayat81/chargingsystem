@@ -27,8 +27,6 @@ public:
     diameter process(diameter d);
     void connectCallback(CallbackInterface *cb);
     void test(std::string host);
-    diameter createRAR(char* msid);
-    void getRAR(char* msid,avp* &allavp,int &l,int &total);
     void getCEA(diameter d,avp* &allavp,int &l,int &total,std::string &host);
 };
 

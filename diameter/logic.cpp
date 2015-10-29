@@ -99,12 +99,12 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         }
         std::cout<<msidstring<<std::endl;
         std::string msidsesinfo=msidstring;
-        std::string msidrarinfo=msidstring;
+        //std::string msidrarinfo=msidstring;
         //store sessid,msid
         
         rocksdb::Status status = db->Put(rocksdb::WriteOptions(), sessidval, msidstring);
         status = db->Put(rocksdb::WriteOptions(), msidsesinfo.append("_sess"), sessidval);
-        status = db->Put(rocksdb::WriteOptions(), msidrarinfo.append("_rarinfo"), "{\"addacg\":[],\"delacg\":[]}");
+        //status = db->Put(rocksdb::WriteOptions(), msidrarinfo.append("_rarinfo"), "{\"addacg\":[],\"delacg\":[]}");
         std::string val;
         status = db->Get(rocksdb::ReadOptions(), msidstring, &val);
         bool profilefound=false;
@@ -121,21 +121,52 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         if(profilefound){
             Document dom;
             dom.Parse(val.c_str());
-            const Value& a = dom["acg"];
+            const Value& a = dom["rg"];
             assert(a.IsArray());
             
             if(a.Size()>0){
-                avp* acg=new avp[a.Size()];
-                for (SizeType i = 0; i < a.Size(); i++){ // Uses SizeType instead of size_t
-                    //printf("a[%d] = %s\n", i, a[i].GetString());   //map to charging-rule-name-avp
-                    avp temp=util.encodeString(1004, 10415, 0xC0, a[i].GetString());
-                    temp.dump();
-                    //printf("\n");
-                    *acg=temp;
-                    acg++;
+                //cek mscc avp in ccr with iteration
+                bool all=false;
+                int rgnum,totalnum;
+                //int64_t totalnum;
+                while (!all) {
+                    avp mscc=d.getAVP(456, 0);
+                    if (mscc.len>0) {
+                        avp rsu=util.getAVP(437, 0, mscc);
+                        avp usu=util.getAVP(446, 0, mscc);
+                        avp rg=util.getAVP(432, 0, mscc);
+                        if(rg.len>0){
+                            rgnum=util.decodeAsInt(rg);
+                            printf("rg:%i\n",rgnum);
+                        }
+                        if(rsu.len>-1){
+                            printf("rsu\n");
+                            //cek quota for granting
+                        }
+                        //cek usage report
+                        
+                        if(usu.len>0){
+                            avp total=util.getAVP(421, 0, usu);
+                            if(total.len>0){
+                                totalnum=util.decodeAsInt(total);
+                                printf("usage %i\n", totalnum);
+                            }
+                        }
+                    }else{
+                        all=true;
+                    }
                 }
-                acg=acg-a.Size();
-                cr_install=util.encodeAVP(1001, 10415, 0xC0, acg, a.Size());
+//                avp* acg=new avp[a.Size()];
+//                for (SizeType i = 0; i < a.Size(); i++){ // Uses SizeType instead of size_t
+//                    //printf("a[%d] = %s\n", i, a[i].GetString());   //map to charging-rule-name-avp
+//                    avp temp=util.encodeString(1004, 10415, 0xC0, a[i].GetString());
+//                    temp.dump();
+//                    //printf("\n");
+//                    *acg=temp;
+//                    acg++;
+//                }
+//                acg=acg-a.Size();
+//                cr_install=util.encodeAVP(1001, 10415, 0xC0, acg, a.Size());
             }
         }
    
@@ -150,7 +181,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
     char f=0x40;
     avp o=util.encodeString(264,0,f,ORIGIN_HOST);
     avp realm=util.encodeString(296,0,f,ORIGIN_REALM);
-    avp authappid=util.encodeInt32(258, 0, f, 16777238);
+    //avp authappid=util.encodeInt32(258, 0, f, 16777238);
     avp rc=util.encodeInt32(268, 0, f, 2001);
     avp flid=util.encodeInt32(629, 10415, 0xc0, 1);
     avp fl=util.encodeInt32(630, 10415, 0xc0, 3);
@@ -158,8 +189,8 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
     avp* list_fl[3]={&vid,&flid,&fl};
     avp sf=util.encodeAVP(628, 10415, 0xc0, list_fl, 3);
     
-    total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+authappid.len+rc.len+sf.len;
-    l=8;
+    total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+rc.len+sf.len;
+    l=7;
     if(cr_install.len>0){
         total=total+cr_install.len;
         l++;
@@ -170,9 +201,9 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
     allavp[2]=realm;
     allavp[3]=cca_req_type;
     allavp[4]=cca_req_num;
-    allavp[5]=authappid;
-    allavp[6]=rc;
-    allavp[7]=sf;
+    //allavp[5]=authappid;
+    allavp[5]=rc;
+    allavp[6]=sf;
     if(cr_install.len>0){
         allavp[l-1]=cr_install;
     }

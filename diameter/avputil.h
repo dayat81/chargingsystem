@@ -18,6 +18,7 @@ public:
     
     std::string decodeAsString(avp a);
     int decodeAsInt(avp a);
+    //int64_t decodeAsInt64(avp a);
     
     avp getAVP(int acode,int vcode,avp a);
     
