@@ -349,7 +349,7 @@ avp avputil::encodeInt64(int acode, int vcode, char flags, int64_t value){
     bytes[7] = value & 0xFF;
     char* b=bytes;
     i=0;
-    while(i<4){
+    while(i<8){
         *resp=*b;
         resp++;
         b++;

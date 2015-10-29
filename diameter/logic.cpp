@@ -280,17 +280,19 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                     }
                                     printf("quota: %i, usage: %i\n",quota,totalnum);
                                     int grant=quota-totalnum;
-                                    //printf("grant: %i\n",grant);
+                                    printf("grant: %i\n",grant);
                                     if(grant>0){
                                         //create octet avp
-                                        //avp grantvol = util.encodeInt64(421, 0, f, grant);
-                                        //grantvol.dump();
-                                        //avp* listavp[1]={&grantvol};
-                                        //avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
+                                        avp grantvol = util.encodeInt64(421, 0, f, grant);
+                                        grantvol.dump();
+                                        printf("\n");
+                                        avp* listavp[1]={&grantvol};
+                                        avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
+                                        gsu.dump();
                                         avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
                                         avp rcmscc=util.encodeInt32(268, 0, f, 2001);
-                                        avp* listavp1[2]={&rgrespon,&rcmscc};
-                                        avp msccresp=util.encodeAVP(456, 0, f, listavp1, 2);
+                                        avp* listavp1[3]={&gsu,&rgrespon,&rcmscc};
+                                        avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
                                         //msccresp.dump();
                                         printf("\n");
                                         allavp[l]=msccresp;
