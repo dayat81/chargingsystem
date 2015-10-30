@@ -146,7 +146,8 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
         //if(a.Size()>0){
             //cek mscc avp in ccr with iteration
         bool all=false;
-        int rgnum = 0,totalnum=0,quota = 0;
+        int rgnum = 0;
+        int64_t totalnum=0,quota = 0;
         //int64_t totalnum;
         while (!all) {
             avp mscc=d.getAVP(456, 0);
@@ -222,7 +223,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                     if(usu.len>0){
                         avp total=util.getAVP(421, 0, usu);
                         if(total.len>0){
-                            printf("usage %i\n", totalnum);
+                            printf("usage %lli\n", totalnum);
                             totalnum=totalnum+util.decodeAsInt(total);
                             //get prev usage in database
                             std::string valusage;
@@ -261,7 +262,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                 rapidjson::Value objValue;
                                 objValue.SetObject();
                                 Value key,q;
-                                objValue.AddMember(key.SetString(pchar, strlen(pchar)),q.SetInt(totalnum), allocator);
+                                objValue.AddMember(key.SetString(pchar, strlen(pchar)),q.SetInt64(totalnum), allocator);
                                 a.PushBack(objValue, allocator);
                                 //printf("Updated json:\n");
                                 
@@ -301,9 +302,9 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                         }else{
                             printf("rsu\n");
                             //cek quota-usage for granting
-                            printf("quota: %i, usage: %i\n",quota,totalnum);
-                            int grant=scale*quota-totalnum;
-                            printf("grant: %i, slice: %i\n",grant,slice);
+                            printf("quota: %lli, usage: %lli\n",quota,totalnum);
+                            int64_t grant=scale*quota-totalnum;
+                            printf("grant: %lli, slice: %i\n",grant,slice);
                             if(grant>0){
                                 if(grant>slice){
                                     //create octet avp
