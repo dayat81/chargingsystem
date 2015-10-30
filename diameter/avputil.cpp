@@ -270,7 +270,7 @@ avp avputil::encodeIP(int acode, int vcode, char flags, unsigned int value[]){
     }
     *resp=0x00;
     resp++;
-    *resp=0x01;
+    *resp=0x00;
     resp++;
     resp=resp-l;
     //	 char *msg1 = new char[4];

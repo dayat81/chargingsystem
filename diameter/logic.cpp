@@ -78,15 +78,15 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
     char f=0x40;
     avp o=util.encodeString(264,0,f,ORIGIN_HOST);
     avp realm=util.encodeString(296,0,f,ORIGIN_REALM);
-    //avp authappid=util.encodeInt32(258, 0, f, 16777238);
+    avp authappid=util.encodeInt32(258, 0, f, 4);
     avp rc=util.encodeInt32(268, 0, f, 2001);
     avp flid=util.encodeInt32(629, 10415, 0xc0, 1);
     avp fl=util.encodeInt32(630, 10415, 0xc0, 3);
     avp vid=util.encodeInt32(266, 0, f, 10415);
     avp* list_fl[3]={&vid,&flid,&fl};
-    avp sf=util.encodeAVP(628, 10415, 0xc0, list_fl, 3);
+    //avp sf=util.encodeAVP(628, 10415, 0xc0, list_fl, 3);
     
-    total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+rc.len+sf.len;
+    total=cca_sessid.len+o.len+realm.len+cca_req_type.len+cca_req_num.len+rc.len+authappid.len;
     l=7;
     std::list<avp> ListMSCC;
     //avp msccresp=avp(0,0);
@@ -320,7 +320,7 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
     allavp[4]=cca_req_num;
     //allavp[5]=authappid;
     allavp[5]=rc;
-    allavp[6]=sf;
+    allavp[6]=authappid;
     int i=7;
     for (std::list<avp>::iterator it = ListMSCC.begin(); it != ListMSCC.end(); it++){
         allavp[i]=*it;
