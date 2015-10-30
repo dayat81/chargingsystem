@@ -349,6 +349,17 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                             ListMSCC.push_front(msccresp);
                         }
                     }
+                }else{//no rsu
+                    avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                    avp sidrespon=util.encodeInt32(439, 0, f, rgnum);
+                    avp rcmscc=util.encodeInt32(268, 0, f, 2001);
+                    avp* listavp1[3]={&rgrespon,&sidrespon,&rcmscc};
+                    avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
+                    //msccresp.dump();
+                    printf("\n");
+                    l++;
+                    total=total+msccresp.len;
+                    ListMSCC.push_front(msccresp);
                 }
                 
             }else{
