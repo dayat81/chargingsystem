@@ -258,6 +258,11 @@ void *handlecommand(void *sock){
             //char result[1024];
             bzero(result, 1024);
             rocksdb::Status status = db->Delete(rocksdb::WriteOptions(),params[2]);
+            char* info="_usage";
+            char rarinfo[strlen(params[2])+strlen(info)];
+            strcpy(rarinfo,params[2]); // copy string one into the result.
+            strcat(rarinfo,info); // append string two to the result.
+            status = db->Delete(rocksdb::WriteOptions(),rarinfo);
             strcat(result, "OK\nocs>");
             int res=write(newsock, result, strlen(result));
         }else if( memcmp( params[0], "show", strlen( "show") ) == 0 &&memcmp( params[1], "msid", strlen( "msid") ) == 0 ) {
