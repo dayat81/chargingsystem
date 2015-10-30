@@ -226,6 +226,18 @@ void *handlecommand(void *sock){
         if(memcmp( params[0], "quit", strlen( "quit") ) == 0){
             close(newsock);
         
+        }else if( memcmp( params[0], "setslice", strlen( "setslice") ) == 0) {
+            //char result[1024];
+            bzero(result, 1024);
+            std::string val;
+            //cek if default exist the copy to msid
+            std::string valdef;
+            rocksdb::Status status = db->Put(rocksdb::WriteOptions(),"slice", params[1]);
+            std::cout<<val<<std::endl;
+            char* value = to_char(val);
+            strcat(result, value);
+            strcat(result, "OK\nocs>");
+            int res=write(newsock, result, strlen(result));
         }else if( memcmp( params[0], "add", strlen( "add") ) == 0 &&memcmp( params[1], "msid", strlen( "msid") ) == 0 ) {
             //char result[1024];
             bzero(result, 1024);
