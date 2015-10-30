@@ -274,9 +274,10 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                 if(rsu.len>-1){
                     if(quota==0){//not subscribe the rg, send 4010
                         avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                        avp sidrespon=util.encodeInt32(439, 0, f, rgnum);
                         avp rcmscc=util.encodeInt32(268, 0, f, 4010);
-                        avp* listavp1[2]={&rgrespon,&rcmscc};
-                        avp msccresp=util.encodeAVP(456, 0, f, listavp1, 2);
+                        avp* listavp1[3]={&rgrespon,&sidrespon,&rcmscc};
+                        avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
                         //msccresp.dump();
                         printf("\n");
                         l++;
@@ -298,9 +299,10 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                 avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
                                 //gsu.dump();
                                 avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                                avp sidrespon=util.encodeInt32(439, 0, f, rgnum);
                                 avp rcmscc=util.encodeInt32(268, 0, f, 2001);
-                                avp* listavp1[3]={&gsu,&rgrespon,&rcmscc};
-                                avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
+                                avp* listavp1[4]={&gsu,&rgrespon,&sidrespon,&rcmscc};
+                                avp msccresp=util.encodeAVP(456, 0, f, listavp1, 4);
                                 //msccresp.dump();
                                 printf("\n");
                                 l++;
@@ -323,9 +325,10 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                                 avp gsu=util.encodeAVP(431, 0, f, listavp, 1);
                                 //gsu.dump();
                                 avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                                avp sidrespon=util.encodeInt32(439, 0, f, rgnum);
                                 avp rcmscc=util.encodeInt32(268, 0, f, 2001);
-                                avp* listavp1[4]={&gsu,&rgrespon,&rcmscc,&fui};
-                                avp msccresp=util.encodeAVP(456, 0, f, listavp1, 4);
+                                avp* listavp1[5]={&gsu,&rgrespon,&sidrespon,&rcmscc,&fui};
+                                avp msccresp=util.encodeAVP(456, 0, f, listavp1, 5);
                                 //msccresp.dump();
                                 printf("\n");
                                 l++;
@@ -335,9 +338,10 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                             //add mscc
                         }else{ //credit limit reached
                             avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                            avp sidrespon=util.encodeInt32(439, 0, f, rgnum);
                             avp rcmscc=util.encodeInt32(268, 0, f, 4012);
-                            avp* listavp1[2]={&rgrespon,&rcmscc};
-                            avp msccresp=util.encodeAVP(456, 0, f, listavp1, 2);
+                            avp* listavp1[3]={&rgrespon,&sidrespon,&rcmscc};
+                            avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
                             //msccresp.dump();
                             printf("\n");
                             l++;
@@ -362,9 +366,10 @@ void logic::getCCA(diameter d,avp* &allavp,int &l,int &total){
                     int rgnum=util.decodeAsInt(rg);
                     //send 4010
                     avp rgrespon=util.encodeInt32(432, 0, f, rgnum);
+                    avp sidrespon=util.encodeInt32(439, 0, f, rgnum);
                     avp rcmscc=util.encodeInt32(268, 0, f, 4010);
-                    avp* listavp1[2]={&rgrespon,&rcmscc};
-                    avp msccresp=util.encodeAVP(456, 0, f, listavp1, 2);
+                    avp* listavp1[3]={&rgrespon,&sidrespon,&rcmscc};
+                    avp msccresp=util.encodeAVP(456, 0, f, listavp1, 3);
                     //msccresp.dump();
                     printf("\n");
                     l++;
